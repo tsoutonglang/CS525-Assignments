@@ -1,86 +1,70 @@
 
-**Storage Manager CS525 Advanced Database Organization Assignment No. 1**
+# Assignment 1: Store Manager
+##  CS 525-01 Advanced Database Organization Fall 2023
 
-----------------------------------------------------
+### Group 9
+- Jinen Modi, A20549644
+- Haard Patel, A20540508
+- Shivam Singh, A20544501
+- Tania Soutonglang, A20439949
 
-***Authors***
+### Description
 
-Group 12 Spring 23
+For this assignment we were tasked to implement a storage manager that is capable of reading blocks from a file on a disk into memory and vice versa. In addition, it also creates, opens, and closes files.
 
-- Shlok Mohan Chaudhari         A20525610
-- Shivdeep Bisurkar             A20525712
-- Zeyu Liu                      A20481907
+### Running
 
-----------------------------------------------------
-
-***Steps to test the storage manager***
-
-----------------------------------------------------
-
-We have added all the tests in the same test file `test_assign1_1.c`. Following make command compiles, links and runs the code seamlessly. Output of the code is an executable `test_assign1 ` file.
+1. Go to the project root using terminal. 
+2. Type `make clean` to delete any potentially uncompiled .o files.
+```
+$ make clean
+```
+3. Type `make` to compile the project files.
 ```
 $ make
 ```
-
-To execute the code, and get the output. 
+4. Type `./test_assign1` to run the executable file.
 ```
 $ ./test_assign1
 ```
 
-Please make sure to use the following command to cleanup any object files and output files before using above command to retest the storage manager.
-```
-$ make clean
-```
+### Functionalities
+#### Manipulating page files
 
-Below is the part of output after you execute the test_assign1:
+**`createPageFile()`** <br> Create a new file of one `PAGE_SIZE` filled with `'\0'` bytes.
 
-```
-[test_assign1_1.c-test single page content-L94-03:27:10] OK: expected true: character in page read from disk is the one we expected.
-[test_assign1_1.c-test single page content-L94-03:27:10] OK: expected true: character in page read from disk is the one we expected.
-[test_assign1_1.c-test single page content-L94-03:27:10] OK: expected true: character in page read from disk is the one we expected.
-[test_assign1_1.c-test single page content-L94-03:27:10] OK: expected true: character in page read from disk is the one we expected.
-reading first block
-[test_assign1_1.c-test single page content-L104-03:27:10] OK: finished test
-```
+**`openPageFile()`** <br> If the requested file exists, it opens the file for the user. If the file does not exist, it will throw the `RC_FILE_NOT_FOUND` error. After finding the file, it will also bring the file information such as the total number of pages, the file name, and the current position.
 
-----------------------------------------------------
+**`closePageFile()`** <br> If the file exists and is currently open, it will close the file. If the file does not exist, it will throw the `RC_FILE_NOT_FOUND` error.
 
-***Functionalities***
+**`destroyPageFile()`** <br> If the file exists, it will delete the file. If the file does not exist, it will throw the `RC_FILE_NOT_FOUND` error.
 
-----------------------------------------------------
+#### Reading blocks from disc
 
-****Manipulate page file****
+**`readBlock()`** <br> Reads the requested page from the requested file. If the file or page does not exist, it will throw the `RC_READ_NON_EXISTING_PAGE` error.
 
-`createPageFile()`: Create a new page file of one PAGE_SIZE.The file is opened in the write mode and filled with '\0' bytes.
+**`getBlockPos()`** <br> Returns the current page position in the file.
 
-`openPageFile()` : If input file is present then opens the existing file or else throws an error RC_FILE_NOT_FOUND. Setting total number of pages. After the file is open we set the file name, total number of pages and current page position in the file handler for further use.
-      
-`closePageFile()` : Closes an open page file. Returns RC_OK if the file is closed successfully.
+**`readFirstBlock()`** <br> Calls `readBlock()` for the first page in the file by setting the `pageNum` argument as 0.
 
-`destroyPageFile()` : Destroy or remove a page file. Returns RC_OK if the file is destroyed successfully.
+**`readPreviousBlock()`** <br> Calls `readBlock()` and sets the `pageNum` argument as what `getBlockPos() - 1` returns.
 
-****Read functions****
+**`readCurrentBlock()`** <br> Calls `readBlock()` and sets the `pageNum` argument as what `getBlockPos()` returns.
 
-`readBlock()` : Read nth block from the file.
+**`readNextBlock()`** <br> Calls `readBlock()` and sets the `pageNum` argument as what `getBlockPos() + 1` returns.
 
-`getBlockPos()` : Return current page position in the page file.
+**`readLastBlock()`** <br> Calls `readBlock()` and sets the `pageNum` argument as what the total page count - 1. 
 
-`readFirstBlock()` : Reads the 1st block in the page file.
+#### Writing blocks to a page file
 
-`readPreviousBlock()` : Reads the previous block of the page file and sets the current page position to the previous block.
+**`writeBlock()`** <br> Does a number of steps to write blocks of data.
+1.  Determines if the page number is valid (greater than 0 but less than the total number of pages) or else it will throw the `RC_WRITE_FAILED` error.
+2. If the file does not exist, it will throw the `RC_FILE_HANDLE_NOT_INIT` error.
+3. If the file does exist, use `fseek()` navigate to the given page, otherwise the `RC_FILE_NOT_FOUND` error will be thrown.
+4. if `fseek()` is successful, the data will be be written into the location using `fwrite()`, otherwise the `RC_WRITE_FAILED` error will be thrown.
 
-`readCurrentBlock()` : Reads current block and sets the current page position to current block.
+**`writeCurrentBlock()`** <br> Calls `writeBlock()` and sets the `pageNum` argument as what `getBlockPos()` returns.
 
-`readNextBlock()` : Reads next block and sets the current page position to the next block.
+**`appendEmptyBlock()`** <br> First checks if the file exists or the `RC_FILE_NOT_FOUND` error will be thrown. Creates a new page of size `PAGE_SIZE` and increases the total number of pages by 1. Writes the empty block at the end of the added page.
 
-`readLastBlock()` : Reads the last block of the file and sets the current page position to the last block.
-
-****Write Functions****
-
-`writeBlock()` : Writes the block at page number(pageNum) and then sets the current page position to the page number. Also updates the total number of pages.
-
-`writeCurrentBlock()` : Writes the current block using current page position
-
-`appendEmptyBlock()` : Appends a new empty block with null bytes in the file
-    
-`ensureCapacity()` : Ensures if the capacity of file is equal to given number of pages. If not then appends n-w new empty blocks to the page to satisfy the capacity. Note: 'w' is current page capacity and 'n' is required page capacity.
+**`ensureCapacity()`** <br> Adds empty pages until the total number of pages equal the `numberOfilePages` argument. Adds as many empty pages as needed by calling `appendEmptyBlock()`.
