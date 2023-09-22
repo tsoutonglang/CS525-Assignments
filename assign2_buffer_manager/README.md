@@ -24,7 +24,7 @@ $ make clean
 ```
 $ make
 ```
-4. Type `./test_assign1` to run the executable file.
+4. Type `./test_assign2` to run the executable file.
 ```
 $ ./test_assign1
 ```
