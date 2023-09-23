@@ -17,7 +17,8 @@ void initStorageManager(void)
 	printf("Haard Patel\n");
 	printf("Shivam Singh\n");
 	printf("Jinen Modi\n");
-	printf("Tania soutonglang\n");
+	printf("Tania Soutonglang\n");
+	printf("Ayush Upadhyay\n");
 	printf("=======================================================================\n\n\n");
 }
 RC createPageFile(char *fileName)

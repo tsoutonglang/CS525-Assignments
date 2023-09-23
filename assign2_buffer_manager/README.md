@@ -32,30 +32,30 @@ $ ./test_assign1
 ### Functionalities
 #### Buffer Manager Interface Pool Handling
 
-**`initBufferPool()`**<br>
+**`initBufferPool()`**<br>Initializes the buffer manager by initializing the node count of the buffer to 1, marking that no pages are available.
 
-**`shutdownBufferPool()`**<br>
+**`shutdownBufferPool()`**<br>Shuts down or deletes the buffer pool and initializes all values to `null`.
 
-**`forceFlushPool()`**<br>
+**`forceFlushPool()`**<br>Used in case there are nodes that are dirty or still being used by another user and can't be written back to the file. The function is called to make those nodes are saved back to the file before other functionalities take place to make sure updated data is not lost.
 
 #### Buffer Manager Interface Access Pages
 
-**`markDirty()`**<br>
+**`markDirty()`**<br>To mark a certain page as dirty when the new updated content is not written back to the file.
 
-**`unpinPage()`**<br>
+**`unpinPage()`**<br>Unpins the page if found in the buffer which was currently pinned and then reduces the fix count by one.
 
-**`forcePage()`**<br>
+**`forcePage()`**<br>Forcibly writes a page to the file even if the page is dirty.
 
-**`pinPage()`**<br>
+**`pinPage()`**<br>Returns the requested page to the user if available in the buffer. Otherwise, search the page from the file and adds it to the buffer or replace it with another node if full.
 
 #### Statistics Interface
 
-**`getFrameContents()`**
+**`getFrameContents()`**<br>Returns the list of all contents of the pages stored in the buffer pool.
 
-**`getDirtyFlags()`**
+**`getDirtyFlags()`**<br>Returns the list of all dirty pages stored in the buffer pool.
 
-**`getFixCounts()`**
+**`getFixCounts()`**<br>Returns the fix count of all pages stored in the buffer pool.
 
-**`getNumReadIO()`**
+**`getNumReadIO()`**<br>Returns the number of read count.
 
-**`getNumWriteIO()`**
+**`getNumWriteIO()`**<br>Returns the number of write count.
