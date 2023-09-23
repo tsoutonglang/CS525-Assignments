@@ -105,6 +105,7 @@ testLRU_K (void)
     
     CHECK(createPageFile("testbuffer.bin"));
     createDummyPages(bm, 100);
+    // int k = 1; CHECK(initBufferPool(bm, "testbuffer.bin", 5, RS_LRU_K, &k));
     CHECK(initBufferPool(bm, "testbuffer.bin", 5, RS_LRU_K, NULL));
     
     // reading first five pages linearly with direct unpin and no modifications

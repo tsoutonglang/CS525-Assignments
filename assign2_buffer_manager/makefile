@@ -1,19 +1,18 @@
-CC = gcc
-CFLAGS  = -g -Wall 
- 
-default: test_assign1
+CC := gcc
+CFLAGS := -g -Wall -w
+SRC :=  dberror.c storage_mgr.c buffer_mgr.c buffer_mgr_stat.c test_assign2_1.c test_assign2_2.c
+OBJ := dberror.o storage_mgr.o buffer_mgr.o buffer_mgr_stat.o
 
-test_assign2: test_assign2_1.o storage_mgr.o dberror.o 
-	$(CC) $(CFLAGS) -o test_assign1 test_assign1_1.o storage_mgr.o dberror.o -lm
+default: test_assign2_1 test_assign2_2
 
-test_assign2_1.o: test_assign2_2.c dberror.h storage_mgr.h test_helper.h
-	$(CC) $(CFLAGS) -c test_assign1_1.c -lm
+test_assign2_1: $(OBJ) test_assign2_1.o
+	$(CC) $(CFLAGS) -o $@ $^
 
-storage_mgr.o: storage_mgr.c storage_mgr.h 
-	$(CC) $(CFLAGS) -c storage_mgr.c -lm
+test_assign2_2: $(OBJ) test_assign2_2.o
+	$(CC) $(CFLAGS) -o $@ $^
 
-dberror.o: dberror.c dberror.h 
-	$(CC) $(CFLAGS) -c dberror.c
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $^
 
-clean: 
-	$(RM) test_assign1 *.o *~
+clean:
+	rm -f test_assign2_1 test_assign2_2 *.o *.bin
