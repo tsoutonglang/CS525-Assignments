@@ -1,13 +1,14 @@
-
 # Assignment 2: Buffer Manager
-##  CS 525-01 Advanced Database Organization Fall 2023
+
+## CS 525-01 Advanced Database Organization Fall 2023
 
 ### Group 9
+
 - Jinen Modi, A20549644
 - Haard Patel, A20540508
 - Shivam Singh, A20544501
 - Tania Soutonglang, A20439949
-- Ayush Upadhyay, A20545042 
+- Ayush Upadhyay, A20545042
 
 ### Description
 
@@ -15,21 +16,27 @@ We are implementing a simple buffer manager that works ontop of what we created 
 
 ### Running
 
-1. Go to the project root using terminal. 
+1. Go to the project root using terminal.
 2. Type `make clean` to delete any potentially uncompiled .o files.
+
 ```
 $ make clean
 ```
+
 3. Type `make` to compile the project files.
+
 ```
 $ make
 ```
-4. Type `./test_assign2` to run the executable file.
+
+4. Type `./test_assign2_1` to run the executable file.
+
 ```
-$ ./test_assign1
+$ ./test_assign2_1
 ```
 
 ### Functionalities
+
 #### Buffer Manager Interface Pool Handling
 
 **`initBufferPool()`**<br>Initializes the buffer manager by initializing the node count of the buffer to 1, marking that no pages are available.
