@@ -39,7 +39,7 @@ $ ./test_assign2_1
 
 #### Buffer Manager Interface Pool Handling
 
-**`initBufferPool()`**<br>Initializes the buffer manager by initializing the node count of the buffer to 1, marking that no pages are available.
+**`initBufferPool()`**<br>Initializes the buffer manager by initializing the node count of the buffer to 0, marking that no pages are available.
 
 **`shutdownBufferPool()`**<br>Shuts down or deletes the buffer pool and initializes all values to `null`.
 
@@ -47,11 +47,11 @@ $ ./test_assign2_1
 
 #### Buffer Manager Interface Access Pages
 
-**`markDirty()`**<br>To mark a certain page as dirty when the new updated content is not written back to the file.
-
 **`unpinPage()`**<br>Unpins the page if found in the buffer which was currently pinned and then reduces the fix count by one.
 
 **`forcePage()`**<br>Forcibly writes a page to the file even if the page is dirty.
+
+**`markDirty()`**<br>To mark a certain page as dirty when the new updated content is not written back to the file.
 
 **`pinPage()`**<br>Returns the requested page to the user if available in the buffer. Otherwise, search the page from the file and adds it to the buffer or replace it with another node if full.
 
