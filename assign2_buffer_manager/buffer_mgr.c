@@ -4,6 +4,9 @@
 #include "storage_mgr.h"
 #include "buffer_mgr.h"
 
+
+// Structure to represent information about a page in the buffer pool
+
 typedef struct BufferManager
 {
 	char *bfrData;
@@ -15,6 +18,8 @@ typedef struct BufferManager
 	struct BufferManager *nextPageInf;
 } BufferManager;
 
+// Structure to represent the buffer pool itself
+
 typedef struct BufferPool
 {
 	BufferManager *tail;
@@ -23,20 +28,30 @@ typedef struct BufferPool
 	int noOfFilledFrames;
 } BufferPool;
 
+// Global variables to keep track of read and write operations
+
 int numOfWrites;
 int numOfReads;
 
 BufferPool *buffQueue;
 SM_FileHandle *fileHandle;
 
+// Function to initialize the buffer pool
+
 void makePageQueue(BM_BufferPool *const bufferPool)
 {
+	// Calculate the index of the last page in the buffer pool
+
 	int lastpg;
 	lastpg = (bufferPool->numPages) - 1;
+
+	// Create an array to hold pointers to BufferManager structures for each page
+
 	BufferManager *addNewPage[bufferPool->numPages];
 	int j = 0;
 	while (j <= lastpg)
 	{
+		// Allocate memory for a BufferManager structure for each page
 		addNewPage[j] = (BufferManager *)malloc(sizeof(BufferManager));
 		j++;
 	}
@@ -44,6 +59,8 @@ void makePageQueue(BM_BufferPool *const bufferPool)
 	int k = 0;
 	while (k <= lastpg)
 	{
+		// Initialize the properties of each BufferManager structure for each page
+
 		addNewPage[k]->frNumber = k;
 		addNewPage[k]->pageNumber = -1;
 		addNewPage[k]->isPgDirty = 0;
@@ -67,16 +84,24 @@ void makePageQueue(BM_BufferPool *const bufferPool)
 		k++;
 	}
 
+	// Set the head and tail pointers of the buffer pool
+
 	buffQueue->head = addNewPage[0];
 	buffQueue->tail = addNewPage[lastpg];
+
+	// Set the total number of frames and the number of filled frames in the buffer pool
 	buffQueue->totalFrames = bufferPool->numPages;
 	buffQueue->noOfFilledFrames = 0;
 }
+
+// Function to check if the buffer pool is empty
 
 RC freeQueue()
 {
 	return (buffQueue->noOfFilledFrames == 0);
 }
+
+// Function to create a new page in the buffer pool
 
 BufferManager *createNewPage(const PageNumber pageNumber)
 {
@@ -93,23 +118,34 @@ BufferManager *createNewPage(const PageNumber pageNumber)
 	return newPgInfo;
 }
 
+// Function to remove a page from the buffer pool (FIFO strategy)
+
 RC dequeue()
 {
+	// Check if the buffer queue is empty
+
 	if (freeQueue())
 	{
 		return RC_QUEUE_IS_EMPTY;
 	}
+
+	// Initialize a pointer to the head of the buffer queue
+
 	BufferManager *bufferMgr = buffQueue->head;
 
 	int f = 0;
 	while (f < buffQueue->noOfFilledFrames)
 	{
+		// If this is the last frame in the queue
+
 		if (f == (buffQueue->noOfFilledFrames - 1))
 		{
+			// Update the tail pointer to this frame
 			buffQueue->tail = bufferMgr;
 		}
 		else
 		{
+			// Move to the next frame in the queue
 			bufferMgr = bufferMgr->nextPageInf;
 		}
 		++f;
@@ -119,10 +155,13 @@ RC dequeue()
 	BufferManager *dummyBuffMgr = buffQueue->tail;
 	int delPage = 0;
 
+	 // Loop through all the frames in the buffer queue
+
 	for (int k = 0; k < buffQueue->totalFrames; ++k)
 	{
 		if ((dummyBuffMgr->fixedPgCnt) != 0)
 		{
+			 // If the frame is still in use, move to the previous frame
 			endPage = dummyBuffMgr->pageNumber;
 			dummyBuffMgr = dummyBuffMgr->previousPageInf;
 		}
@@ -130,34 +169,43 @@ RC dequeue()
 		{
 			if (buffQueue->tail->pageNumber == dummyBuffMgr->pageNumber)
 			{
+				 // If the tail frame is to be removed, update the tail pointer
 				buffQueue->tail = (buffQueue->tail->previousPageInf);
 				delPage = dummyBuffMgr->pageNumber;
 				buffQueue->tail->nextPageInf = NULL;
 			}
 			else
 			{
+				 // Remove the frame from the middle of the queue
 				dummyBuffMgr->previousPageInf->nextPageInf = dummyBuffMgr->nextPageInf;
 				delPage = dummyBuffMgr->pageNumber;
 				dummyBuffMgr->nextPageInf->previousPageInf = dummyBuffMgr->previousPageInf;
 			}
 		}
 	}
+	  // If the removed frame is dirty, write it back to storage
 	if (dummyBuffMgr->isPgDirty == 1)
 	{
 		writeBlock(dummyBuffMgr->pageNumber, fileHandle, dummyBuffMgr->bfrData);
 		numOfWrites++;
 	}
+	  // Check if the tail page number matches the previously noted end page
 	if (buffQueue->tail->pageNumber == endPage)
 	{
 		return RC_OK;
 	}
+	// Decrement the count of filled frames in the buffer queue
 	buffQueue->noOfFilledFrames--;
 	return delPage;
 }
 
+// Function to add a page to the buffer pool (FIFO strategy)
+
 RC enqueue(BM_PageHandle *const pageHandle, const PageNumber pageNumber, BM_BufferPool *const bufferPool)
 {
 	int deletedPages = -1;
+
+	   // Create a new buffer manager for the page to be added
 	BufferManager *buffMgr = createNewPage(pageNumber);
 	if ((*buffQueue).totalFrames == (*buffQueue).noOfFilledFrames)
 	{
@@ -165,10 +213,16 @@ RC enqueue(BM_PageHandle *const pageHandle, const PageNumber pageNumber, BM_Buff
 	}
 	if (freeQueue())
 	{
+		 // Read the page from storage into the new buffer manager
+		
 		readBlock(buffMgr->pageNumber, fileHandle, buffMgr->bfrData);
 		numOfReads++;
+
+		  // Update the page handle with the page number and data
 		(*pageHandle).pageNum = pageNumber;
 		(*pageHandle).data = buffMgr->bfrData;
+
+		 // Link the new buffer manager at the front of the queue
 		(*buffMgr).nextPageInf = buffQueue->head;
 		(*buffMgr).frNumber = buffQueue->head->frNumber;
 		(*buffQueue).head = buffMgr;
@@ -177,7 +231,10 @@ RC enqueue(BM_PageHandle *const pageHandle, const PageNumber pageNumber, BM_Buff
 	}
 	else
 	{
+		// Read the page from storage into the new buffer manager
 		readBlock(pageNumber, fileHandle, buffMgr->bfrData);
+		
+		// Determine the frame number for the new buffer manager
 		if (deletedPages == -1)
 		{
 			(*buffMgr).frNumber = buffQueue->head->frNumber + 1;
@@ -186,16 +243,21 @@ RC enqueue(BM_PageHandle *const pageHandle, const PageNumber pageNumber, BM_Buff
 		{
 			(*buffMgr).frNumber = deletedPages;
 		}
+		// Update the page handle with the page number and data
 		(*pageHandle).data = buffMgr->bfrData;
 		numOfReads++;
+
+		// Link the new buffer manager at the front of the queue
 		(*buffMgr).nextPageInf = buffQueue->head;
 		buffQueue->head->previousPageInf = buffMgr;
 		(*buffQueue).head = buffMgr;
 		(*pageHandle).pageNum = pageNumber;
 	}
+	 // Increment the count of filled frames in the buffer queue
 	(*buffQueue).noOfFilledFrames = (*buffQueue).noOfFilledFrames + 1;
 	return RC_OK;
 }
+// Function to pin a page in the buffer pool (FIFO strategy)
 
 RC FIFOPinPage(BM_BufferPool *const bm, BM_PageHandle *const page, const PageNumber pageNum)
 {
@@ -211,6 +273,7 @@ RC FIFOPinPage(BM_BufferPool *const bm, BM_PageHandle *const page, const PageNum
 	int j = 0;
 	while (j < numberOfPages)
 	{
+		  // Check if the page is already available in the buffer
 		if (pageAvailable == RC_OK)
 		{
 			if (pageNum == (*buffMgr).pageNumber)
@@ -228,6 +291,8 @@ RC FIFOPinPage(BM_BufferPool *const bm, BM_PageHandle *const page, const PageNum
 
 	switch (pageAvailable)
 	{
+
+	 // Page is already in the buffer, increment its fixed page count	
 	case 1:
 	{
 		(*buffMgr).fixedPgCnt++;
@@ -242,6 +307,7 @@ RC FIFOPinPage(BM_BufferPool *const bm, BM_PageHandle *const page, const PageNum
 	int k = 0;
 	while (buffQueue->noOfFilledFrames < buffQueue->totalFrames)
 	{
+		// Find an empty frame in the buffer to load the page
 		if (dummyBuffMgr->pageNumber == -1)
 		{
 			buffQueue->noOfFilledFrames = buffQueue->noOfFilledFrames + 1;
@@ -249,6 +315,8 @@ RC FIFOPinPage(BM_BufferPool *const bm, BM_PageHandle *const page, const PageNum
 			(*dummyBuffMgr).fixedPgCnt = 1;
 			page->pageNum = pageNum;
 			(*dummyBuffMgr).pageNumber = pageNum;
+
+			// Read the page from storage into the buffer
 
 			readBlock((*dummyBuffMgr).pageNumber, fileHandle, dummyBuffMgr->bfrData);
 			numOfReads++;
@@ -275,12 +343,14 @@ RC FIFOPinPage(BM_BufferPool *const bm, BM_PageHandle *const page, const PageNum
 
 	if (dummyCode == 0)
 	{
+		
 		return RC_OK;
 	}
 
 	int f = 0;
 	while (f < numberOfPages)
 	{
+		 // Find the first frame with fixed page count equal to 0
 		if (dummyBuffMgr->fixedPgCnt == RC_OK)
 		{
 			break;
@@ -322,15 +392,18 @@ RC FIFOPinPage(BM_BufferPool *const bm, BM_PageHandle *const page, const PageNum
 
 	(*newPage).frNumber = dummy->frNumber;
 	(*newPage).bfrData = dummy->bfrData;
-
+	 // Read the requested page from storage into the new buffer manager
 	readBlock(pageNum, fileHandle, newPage->bfrData);
 	numOfReads++;
 	page->data = (*newPage).bfrData;
+
+	// Update the tail of the buffer queue
 	(*buffQueue).tail->nextPageInf = newPage;
 	(*buffQueue).tail = newPage;
 
 	return RC_OK;
 }
+// Function to pin a page in the buffer pool (LRU strategy)
 
 RC LRUPinPage(BM_BufferPool *const bufferPool, BM_PageHandle *const pageHandle, const PageNumber pageNumber)
 {
@@ -389,6 +462,8 @@ RC LRUPinPage(BM_BufferPool *const bufferPool, BM_PageHandle *const pageHandle, 
 	return RC_OK;
 }
 
+// Function to pin a page in the buffer pool (generic)
+
 RC pinPage(BM_BufferPool *const bm, BM_PageHandle *const page, const PageNumber pageNum)
 {
 	int ret;
@@ -403,6 +478,8 @@ RC pinPage(BM_BufferPool *const bm, BM_PageHandle *const page, const PageNumber 
 	return ret;
 }
 
+// Function to update the buffer pool with page file information
+
 void updateBuffer(BM_BufferPool *const bufferPool, const char *const pageName, const int numOfPages, ReplacementStrategy repStrategy)
 {
 	(*bufferPool).strategy = repStrategy;
@@ -412,6 +489,8 @@ void updateBuffer(BM_BufferPool *const bufferPool, const char *const pageName, c
 	(*bufferPool).mgmtData = bufferSize;
 	(*bufferPool).numPages = numOfPages;
 }
+
+// Function to initialize the buffer pool
 
 RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName, const int numPages, ReplacementStrategy strategy, void *stratData)
 {
@@ -424,6 +503,8 @@ RC initBufferPool(BM_BufferPool *const bm, const char *const pageFileName, const
 	makePageQueue(bm);
 	return RC_OK;
 }
+
+// Function to shut down the buffer pool
 
 RC shutdownBufferPool(BM_BufferPool *const bm)
 {
@@ -447,6 +528,8 @@ RC shutdownBufferPool(BM_BufferPool *const bm)
 	return RC_OK;
 }
 
+// Function to force flushing of all dirty pages to disk
+
 RC forceFlushPool(BM_BufferPool *const bm)
 {
 	BufferManager *buffMgr;
@@ -464,6 +547,8 @@ RC forceFlushPool(BM_BufferPool *const bm)
 	}
 	return RC_OK;
 }
+
+// Function to unpin a page in the buffer pool
 
 RC unpinPage(BM_BufferPool *const bm, BM_PageHandle *const page)
 {
@@ -487,6 +572,8 @@ RC unpinPage(BM_BufferPool *const bm, BM_PageHandle *const page)
 	return RC_OK;
 }
 
+// Function to force a page to disk
+
 RC forcePage(BM_BufferPool *const bm, BM_PageHandle *const page)
 {
 	BufferManager *buffMgr;
@@ -508,6 +595,8 @@ RC forcePage(BM_BufferPool *const bm, BM_PageHandle *const page)
 	return RC_OK;
 }
 
+// Function to mark a page as dirty
+
 RC markDirty(BM_BufferPool *const bm, BM_PageHandle *const page)
 {
 	BufferManager *buffMgr;
@@ -526,6 +615,8 @@ RC markDirty(BM_BufferPool *const bm, BM_PageHandle *const page)
 	(*buffMgr).isPgDirty = 1;
 	return RC_OK;
 }
+
+// Function to get the contents of frames in the buffer pool
 
 PageNumber *getFrameContents(BM_BufferPool *const bm)
 {
@@ -552,6 +643,8 @@ PageNumber *getFrameContents(BM_BufferPool *const bm)
 	return *numPageFile;
 }
 
+// Function to get the dirty flags of pages in the buffer pool
+
 bool *getDirtyFlags(BM_BufferPool *const bm)
 {
 	bool(*scanDirtyPage)[bm->numPages];
@@ -573,6 +666,8 @@ bool *getDirtyFlags(BM_BufferPool *const bm)
 	}
 	return *scanDirtyPage;
 }
+
+// Function to get the fix counts of pages in the buffer pool
 
 int *getFixCounts(BM_BufferPool *const bm)
 {
@@ -599,10 +694,13 @@ int *getFixCounts(BM_BufferPool *const bm)
 	return *joinCountPage;
 }
 
+// Function to get the number of read I/O operations
+
 int getNumReadIO(BM_BufferPool *const bm)
 {
 	return numOfReads;
 }
+// Function to get the number of write I/O operations
 
 int getNumWriteIO(BM_BufferPool *const bm)
 {
