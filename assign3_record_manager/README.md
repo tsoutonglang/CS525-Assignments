@@ -1,5 +1,4 @@
 # Assignment 3: Record Manager
-
 ## CS 525-01 Advanced Database Organization Fall 2023
 
 ## Group 9
@@ -32,56 +31,64 @@ $ make
 
 4. Type `./test_assign3` to run the executable file.
 
-   Note: Below command will run the test cases defined in the file `test_assign3_1`
-
 ```
 $ ./bin/test_assign3/run
 ```
 
-5. Type `./bin/test_expr/run` to run the executable file. It uses `expr.h` interface.
+5. Type `./bin/test_expr/run` to run the executable file using the `expr.c` interface.
 
 ```
 $ ./bin/test_expr/run
 ```
 
-## Additional Testcase: test_client
+## Functionalities
 
-### Created the test case named `test_client`. It allows to perform operations on records manaually.
+### Table and Manager
 
-- It gives more flexibility to understand the functionality of simple record manager
+**initRecordManager()**<br>Initializes the record manager.
 
-Below are the features of the additinal test case file in addition to `test_exp` and `test_assign3`
+**shutdownRecordManager()**<br>Shuts down the record manager.
 
-### Features
+**createTable()**<br>Creates a new table with the table name, schema, and free space information.
 
-- **Create Table (CT):** Create a new table in the database.
-- **Insert Record (IR):** Insert a record into a table.
-- **Get Record (GR):** Retrieve and display a record from a table.
-- **Update Record (UR):** Update the values of a record in a table.
-- **Delete Record (DR):** Delete a record from a table.
-- **Scan Table (ST):** Perform complex queries and filtering on table data.
-- **Delete Table (DT):** Delete an entire table.
+**closetable()**<br>Closes a table by unpinning the page and shutting down the buffer pool.
 
-### How to Run `test_client`
+**deletetable()**<br>Deletes the table by calling `destroyPageFile()`.
 
-```
-$ ./bin/test_client/run
-```
+**getNumTuples()**<br>Returns the number of tuples in the table.
 
-### Options
+### Handling Records in a Table
 
-When you run the client, you will see the following options:
+**insertRecord()**<br>Inserts a new record that is to be inserted at the page and slot mentioned.
 
-- **CT:** Create a table.
-- **IR:** Insert a record.
-- **GR:** Get a record.
-- **UR:** Update a record.
-- **DR:** Delete a record.
-- **ST:** Scan a table.
-- **DT:** Delete a table.
+**deleteRecord()**<br>Deletes a record from the page and slot mentioned.
 
-Type one which you want to experiment with !
+**updateRecord()**<br>Updates an existing record from the page and slot mentioned.
 
-You will be navigated further when you run it.
+**getRecord()**<br>Retreives a record from the page and slot mentioned.
 
-Give it a try !
+### Scans
+
+**startScan()**<br>Scans the tuples based on a certain criteria with the RM_ScanHandle data structure.
+
+**next()**<br>Starts the scan function, calls the next method, and returns the next tuple from the record satisfying the criteria mentioned in the start scan.
+
+**closeScan()**<br>Indicates the record manager that associated resources can clean.
+
+### Dealing with Schemas
+
+**getRecordSize()**<br>Checks if schema is created. If it exists it returns the size in bytes, else it throws an error.
+
+**createSchema()**<br>Creates a new schema.
+
+**freeSchema()**<br>Frees up the space associated with the particular schema in memory.
+
+### Dealing with Records and Attribute Values
+
+**createRecord()**<br>Creates a new record by initializing the page and slot as -1.
+
+**freeRecord()**<br>Checks if the record is free.
+
+**getAttr()**<br>Gets the attribute value of a particular record to an integer, string, or float.
+
+**setAttr()**<br>Sets the attribute value to an integer, string, or float.
